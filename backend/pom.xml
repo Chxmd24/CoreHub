@@ -49,6 +49,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Spring Boot JSON starter (includes Jackson Databind and JSR-310 JavaTimeModule) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-json</artifactId>
+        </dependency>
+
         <!-- Testing starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
