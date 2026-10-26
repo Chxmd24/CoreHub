@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/components/mine").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/components", "/api/components/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
