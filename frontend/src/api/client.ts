@@ -10,13 +10,15 @@ import {
   ReservationResponse,
   UserResponse,
   ApiErrorResponse,
+  RegisterRequest,
+  LoginRequest,
 } from './types';
 
 export const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 ).replace(/\/$/, '');
 
-const TOKEN_KEY = 'corehub_token';
+export const TOKEN_KEY = 'corehub_token';
 
 export const tokenStorage = {
   get: (): string | null => {
@@ -42,17 +44,33 @@ export const tokenStorage = {
   },
 };
 
-export class ApiClientError extends Error {
+export class ApiError extends Error {
   public status: number;
+  public data?: any;
+
+  constructor(message: string, status: number = 0, data?: any) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+export class ApiClientError extends ApiError {
   public errorData?: ApiErrorResponse;
 
   constructor(status: number, message: string, errorData?: ApiErrorResponse) {
-    super(message);
+    super(message, status, errorData);
     this.name = 'ApiClientError';
-    this.status = status;
     this.errorData = errorData;
   }
 }
+
+let onUnauthorizedCallback: (() => void) | null = null;
+
+export const setOnUnauthorizedCallback = (cb: (() => void) | null) => {
+  onUnauthorizedCallback = cb;
+};
 
 export async function request<T>(
   endpoint: string,
@@ -84,6 +102,12 @@ export async function request<T>(
   const responseData = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401 && !endpoint.includes('/api/auth/login')) {
+      if (onUnauthorizedCallback) {
+        onUnauthorizedCallback();
+      }
+    }
+
     const errorData = isJson ? (responseData as ApiErrorResponse) : undefined;
     const errorMessage =
       errorData?.message ||
@@ -109,6 +133,7 @@ export const apiClient = {
   getToken: () => tokenStorage.get(),
   setToken: (token: string) => tokenStorage.set(token),
   clearToken: () => tokenStorage.remove(),
+  setOnUnauthorizedCallback: (cb: (() => void) | null) => setOnUnauthorizedCallback(cb),
 };
 
 export const api = {
@@ -117,16 +142,10 @@ export const api = {
   },
 
   auth: {
-    register: (data: {
-      name: string;
-      studentId: string;
-      email: string;
-      password: string;
-      phone?: string;
-      department?: string;
-    }) => request<AuthResponse>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+    register: (data: RegisterRequest) =>
+      request<UserResponse>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
 
-    login: (data: { email: string; password: string }) =>
+    login: (data: LoginRequest) =>
       request<AuthResponse>('/api/auth/login', { method: 'POST', body: JSON.stringify(data) }),
   },
 

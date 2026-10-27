@@ -1,23 +1,77 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { LogIn, KeyRound, Mail, CheckCircle2, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { LogIn, KeyRound, Mail, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../api/client';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const { isAuthenticated, login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Extract navigation state if redirected after registration or from a protected route
+  const locationState = location.state as {
+    registeredEmail?: string;
+    registrationSuccessMessage?: string;
+    from?: { pathname: string };
+  } | null;
+
+  const [email, setEmail] = useState(locationState?.registeredEmail || '');
   const [password, setPassword] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [successMessage] = useState<string | null>(
+    locationState?.registrationSuccessMessage || null
+  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setStatusMessage(null);
+  // If already authenticated, redirect to destination or dashboard
+  useEffect(() => {
+    if (isAuthenticated) {
+      const destination = locationState?.from?.pathname || '/dashboard';
+      navigate(destination, { replace: true });
+    }
+  }, [isAuthenticated, navigate, locationState]);
 
-    // Foundation placeholder interaction
-    setTimeout(() => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage('Institutional email is required.');
+      return;
+    }
+    if (!password) {
+      setErrorMessage('Password is required.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await login(trimmedEmail, password);
+      // Login successful: redirect to destination or default to dashboard
+      const destination = locationState?.from?.pathname || '/dashboard';
+      navigate(destination, { replace: true });
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.status === 401) {
+          setErrorMessage('Invalid institutional email or password.');
+        } else if (err.status === 400 && err.data?.validationErrors) {
+          const firstValidation = Object.values(err.data.validationErrors)[0] as string;
+          setErrorMessage(firstValidation || 'Invalid login details provided.');
+        } else if (err.status === 0) {
+          setErrorMessage('Unable to connect to CoreHub server. Please verify the backend is running.');
+        } else {
+          setErrorMessage(err.message || 'An error occurred during sign in.');
+        }
+      } else if (err instanceof Error) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage('An unexpected error occurred during sign in.');
+      }
+    } finally {
       setIsSubmitting(false);
-      setStatusMessage('Milestone 7 Foundation: Authentication form layout and validation verified against backend schema. Session login will be connected in Milestone 8.');
-    }, 600);
+    }
   };
 
   return (
@@ -45,7 +99,8 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {statusMessage && (
+        {/* Redirect Notice (if redirected from a protected route) */}
+        {locationState?.from && !successMessage && (
           <div
             role="status"
             style={{
@@ -61,8 +116,52 @@ export const LoginPage: React.FC = () => {
               marginBottom: '1.25rem',
             }}
           >
-            <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-            <span>{statusMessage}</span>
+            <ShieldCheck size={16} style={{ flexShrink: 0 }} />
+            <span>Please sign in with your student account to access this page.</span>
+          </div>
+        )}
+
+        {/* Registration Success Banner */}
+        {successMessage && (
+          <div
+            role="status"
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              fontSize: '0.85rem',
+              color: 'var(--color-success)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <CheckCircle2 size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {/* Authentication Error Banner */}
+        {errorMessage && (
+          <div
+            role="alert"
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              fontSize: '0.85rem',
+              color: 'var(--color-danger)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem',
+              marginBottom: '1.25rem',
+            }}
+          >
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{errorMessage}</span>
           </div>
         )}
 
@@ -78,8 +177,12 @@ export const LoginPage: React.FC = () => {
                 className="form-input"
                 placeholder="e.g. e20001@eng.pdn.ac.lk"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errorMessage) setErrorMessage(null);
+                }}
                 required
+                autoComplete="email"
                 style={{ paddingLeft: '2.5rem' }}
               />
               <Mail
@@ -93,7 +196,7 @@ export const LoginPage: React.FC = () => {
                 }}
               />
             </div>
-            <span className="form-hint">Enter your registered email address</span>
+            <span className="form-hint">Enter your registered student email address</span>
           </div>
 
           <div className="form-group">
@@ -109,8 +212,12 @@ export const LoginPage: React.FC = () => {
                 className="form-input"
                 placeholder="Enter your account password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errorMessage) setErrorMessage(null);
+                }}
                 required
+                autoComplete="current-password"
                 style={{ paddingLeft: '2.5rem' }}
               />
               <KeyRound
@@ -132,7 +239,7 @@ export const LoginPage: React.FC = () => {
             disabled={isSubmitting}
             style={{ marginTop: '1.5rem' }}
           >
-            {isSubmitting ? 'Validating...' : 'Sign In (Milestone 7 Preview)'}
+            {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 

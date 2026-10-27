@@ -37,6 +37,20 @@ export interface UserResponse {
   createdAt: string;
 }
 
+export interface RegisterRequest {
+  name: string;
+  studentId: string;
+  email: string;
+  password: string;
+  phone?: string | null;
+  department?: string | null;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   tokenType: string;

@@ -97,7 +97,7 @@ export const MyReservationsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Milestone 7 Preview Notice */}
+      {/* Preview Notice */}
       <div
         style={{
           padding: '0.75rem 1rem',
@@ -114,7 +114,7 @@ export const MyReservationsPage: React.FC = () => {
       >
         <Bookmark size={16} style={{ flexShrink: 0 }} />
         <span>
-          <strong>Milestone 7 Foundation Preview:</strong> Demonstrating reservation lifecycle views, 24-hour expiry indicators, and contact privacy protection. Live reservation workflows will be connected in Milestone 8.
+          <strong>Reservations Preview:</strong> Demonstrating reservation lifecycle views, 24-hour expiry indicators, and contact privacy protection. Interactive reservation actions will be connected in upcoming marketplace milestones.
         </span>
       </div>
 
@@ -277,7 +277,7 @@ export const MyReservationsPage: React.FC = () => {
                     type="button"
                     className="btn btn-sm btn-outline"
                     style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
-                    onClick={() => alert('Milestone 7 Foundation: Reservation cancellation will be connected to backend PATCH in Milestone 8.')}
+                    onClick={() => alert('Reservation cancellation will be connected in upcoming marketplace milestones.')}
                   >
                     <XCircle size={15} />
                     <span>Cancel Reservation</span>
@@ -285,7 +285,7 @@ export const MyReservationsPage: React.FC = () => {
                   <button
                     type="button"
                     className="btn btn-sm btn-primary"
-                    onClick={() => alert('Milestone 7 Foundation: Handover completion will be connected to backend PATCH in Milestone 8.')}
+                    onClick={() => alert('Handover completion will be connected in upcoming marketplace milestones.')}
                   >
                     <CheckCircle size={15} />
                     <span>Complete Handover</span>

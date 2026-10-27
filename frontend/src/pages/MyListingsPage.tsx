@@ -106,14 +106,14 @@ export const MyListingsPage: React.FC = () => {
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => alert('Milestone 7 Foundation: Component creation form will be integrated in Milestone 8.')}
+          onClick={() => alert('Component creation form will be integrated in upcoming marketplace milestones.')}
         >
           <Plus size={16} />
           <span>New Component Listing</span>
         </button>
       </div>
 
-      {/* Milestone 7 Preview Notice */}
+      {/* Preview Notice */}
       <div
         style={{
           padding: '0.75rem 1rem',
@@ -130,7 +130,7 @@ export const MyListingsPage: React.FC = () => {
       >
         <Info size={16} style={{ flexShrink: 0 }} />
         <span>
-          <strong>Milestone 7 Foundation Preview:</strong> Displaying demonstration listings and status badges. Creation, editing, and listing operations will be connected to authenticated sessions in Milestone 8.
+          <strong>Listings Preview:</strong> Displaying demonstration listings and status badges. Component creation, editing, and deletion in the frontend will be connected in upcoming marketplace milestones.
         </span>
       </div>
 
@@ -216,7 +216,7 @@ export const MyListingsPage: React.FC = () => {
                   className="btn btn-sm btn-outline"
                   title="Edit Listing"
                   disabled={item.status === ComponentStatus.EXCHANGED}
-                  onClick={() => alert('Milestone 7 Foundation: Listing editing will be connected in Milestone 8.')}
+                  onClick={() => alert('Listing editing will be connected in upcoming marketplace milestones.')}
                 >
                   <Edit size={15} />
                   <span>Edit</span>
@@ -228,9 +228,9 @@ export const MyListingsPage: React.FC = () => {
                   style={{ color: 'var(--color-danger)' }}
                   onClick={() => {
                     if (item.status === ComponentStatus.RESERVED) {
-                      alert('Conflict: Active reservation prevents component deletion (HTTP 409). Safe deletion will be enforced in Milestone 8.');
+                      alert('Conflict: Active reservation prevents component deletion (HTTP 409). Safe deletion will be enforced in upcoming marketplace milestones.');
                     } else {
-                      alert('Milestone 7 Foundation: Safe component deletion will be connected in Milestone 8.');
+                      alert('Safe component deletion will be connected in upcoming marketplace milestones.');
                     }
                   }}
                 >

@@ -8,10 +8,13 @@ import {
   PlusCircle,
   ArrowRight,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  UserCheck
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export const DashboardPage: React.FC = () => {
+  const { user } = useAuth();
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
       {/* Header section */}
@@ -29,15 +32,18 @@ export const DashboardPage: React.FC = () => {
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>Student Dashboard</h1>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>
+              {user ? `Welcome, ${user.name}` : 'Student Dashboard'}
+            </h1>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
-              Manage your listed electronic hardware, active reservations, and peer handovers
+              {user?.studentId ? `${user.studentId} • ` : ''}
+              {user?.department || 'Faculty of Engineering'} • Manage your electronic hardware and reservations
             </p>
           </div>
         </div>
       </div>
 
-      {/* Milestone 7 Preview Notice */}
+      {/* Authenticated Status Notice */}
       <div
         style={{
           padding: '0.75rem 1rem',
@@ -52,9 +58,9 @@ export const DashboardPage: React.FC = () => {
           gap: '0.5rem',
         }}
       >
-        <LayoutDashboard size={16} style={{ flexShrink: 0 }} />
+        <UserCheck size={16} style={{ flexShrink: 0 }} />
         <span>
-          <strong>Milestone 7 Foundation Preview:</strong> Displaying dashboard layout and placeholder metrics. Live session state and user data will be populated in Milestone 8.
+          <strong>Authenticated Session Active:</strong> Signed in with institutional credentials. Marketplace listing creation, editing, and live reservation actions will be connected in upcoming milestones.
         </span>
       </div>
 
