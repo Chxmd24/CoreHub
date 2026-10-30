@@ -16,7 +16,7 @@ import { useAuth } from '../context/AuthContext';
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   return (
-    <div className="container" style={{ padding: '2.5rem 1.5rem' }}>
+    <div style={{ padding: '1rem 0' }}>
       {/* Header section */}
       <div style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
@@ -60,7 +60,7 @@ export const DashboardPage: React.FC = () => {
       >
         <UserCheck size={16} style={{ flexShrink: 0 }} />
         <span>
-          <strong>Authenticated Session Active:</strong> Signed in with institutional credentials. Marketplace listing creation, editing, and live reservation actions will be connected in upcoming milestones.
+          <strong>Authenticated Session Active:</strong> Signed in with institutional credentials. Student hardware listing creation, editing, and management are live and connected to the backend.
         </span>
       </div>
 

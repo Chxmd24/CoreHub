@@ -528,3 +528,153 @@
   color: var(--color-text-muted);
   font-size: 1.05rem;
 }
+
+/* Modals & Dialogs */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--color-bg-card);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-primary-900);
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+  color: var(--color-primary-900);
+  background-color: var(--color-bg-subtle);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: var(--color-bg-subtle);
+  flex-wrap: wrap;
+}
+
+/* Alert Banners */
+.alert-banner {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.alert-banner-success {
+  background-color: var(--color-success-50);
+  border: 1px solid var(--color-success-500);
+  color: var(--color-success-700);
+}
+
+.alert-banner-error {
+  background-color: var(--color-danger-50);
+  border: 1px solid var(--color-danger-500);
+  color: var(--color-danger-700);
+}
+
+.alert-banner-warning {
+  background-color: var(--color-warning-50);
+  border: 1px solid var(--color-warning-500);
+  color: var(--color-warning-700);
+}
+
+.alert-banner-info {
+  background-color: var(--color-accent-50);
+  border: 1px solid var(--color-accent-500);
+  color: var(--color-accent-700);
+}
+
+/* Form Helper & Error Text */
+.form-helper-text {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+.form-error-text {
+  font-size: 0.8rem;
+  color: var(--color-danger-600);
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.form-char-count {
+  font-size: 0.75rem;
+  color: var(--color-text-subtle);
+  text-align: right;
+  margin-top: 0.25rem;
+}

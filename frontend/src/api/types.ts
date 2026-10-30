@@ -51,6 +51,15 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ComponentRequest {
+  title: string;
+  description: string;
+  category: string;
+  specifications?: string | null;
+  listingType: ListingType;
+  price?: number | null;
+}
+
 export interface AuthResponse {
   accessToken: string;
   tokenType: string;

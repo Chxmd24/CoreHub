@@ -6,6 +6,7 @@
 import {
   AuthResponse,
   ComponentResponse,
+  ComponentRequest,
   PagedResponse,
   ReservationResponse,
   UserResponse,
@@ -180,26 +181,11 @@ export const api = {
 
     getMy: () => request<ComponentResponse[]>('/api/components/mine'),
 
-    create: (data: {
-      title: string;
-      description: string;
-      category: string;
-      specifications?: string;
-      listingType: string;
-      price?: number;
-    }) => request<ComponentResponse>('/api/components', { method: 'POST', body: JSON.stringify(data) }),
+    create: (data: ComponentRequest) =>
+      request<ComponentResponse>('/api/components', { method: 'POST', body: JSON.stringify(data) }),
 
-    update: (
-      id: number | string,
-      data: {
-        title: string;
-        description: string;
-        category: string;
-        specifications?: string;
-        listingType: string;
-        price?: number;
-      }
-    ) => request<ComponentResponse>(`/api/components/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    update: (id: number | string, data: ComponentRequest) =>
+      request<ComponentResponse>(`/api/components/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
     delete: (id: number | string) => request<void>(`/api/components/${id}`, { method: 'DELETE' }),
   },
