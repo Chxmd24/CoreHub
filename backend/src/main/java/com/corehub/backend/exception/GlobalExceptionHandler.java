@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,12 +40,41 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
         ErrorResponse response = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
-                "Malformed JSON request or unsupported enum value"
+                ex.getMessage()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String detail = "Malformed JSON request or unsupported enum value";
+        Throwable t = ex.getCause();
+        while (t != null) {
+            if (t instanceof IllegalArgumentException iae) {
+                detail = iae.getMessage();
+                break;
+            }
+            if (t.getClass().getSimpleName().contains("UnrecognizedPropertyException")) {
+                try {
+                    Method getPropertyMethod = t.getClass().getMethod("getPropertyName");
+                    Object prop = getPropertyMethod.invoke(t);
+                    detail = "Unrecognized or forbidden field: " + prop;
+                } catch (Exception ignored) {
+                    detail = "Unrecognized or forbidden field in request payload";
+                }
+                break;
+            }
+            t = t.getCause();
+        }
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                detail
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }

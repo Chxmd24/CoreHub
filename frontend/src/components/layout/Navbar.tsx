@@ -1,15 +1,73 @@
-import React, { useState } from 'react';
-import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Cpu, Menu, X, ShoppingBag, LayoutDashboard, Bookmark, LogIn, UserPlus, LogOut, User as UserIcon } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Cpu,
+  Menu,
+  X,
+  ShoppingBag,
+  LayoutDashboard,
+  Bookmark,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Shield,
+  ChevronDown,
+  User as UserIcon,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Role } from '../../api/types';
 
 export const Navbar: React.FC = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState<boolean>(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+  const accountTriggerRef = useRef<HTMLButtonElement>(null);
+
+  // Close both menus when the route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
+  }, [location.pathname]);
+
+  // Handle outside click and Escape key dismissal for account dropdown and mobile menu
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (accountMenuOpen) {
+          setAccountMenuOpen(false);
+          accountTriggerRef.current?.focus();
+        }
+        if (mobileMenuOpen) {
+          setMobileMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [accountMenuOpen, mobileMenuOpen]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((prev) => !prev);
+    if (accountMenuOpen) setAccountMenuOpen(false);
   };
 
   const closeMobileMenu = () => {
@@ -17,10 +75,20 @@ export const Navbar: React.FC = () => {
   };
 
   const handleLogout = () => {
+    setAccountMenuOpen(false);
+    setMobileMenuOpen(false);
     logout();
-    closeMobileMenu();
     navigate('/');
   };
+
+  const getRoleLabel = (role?: Role) => {
+    if (role === Role.SUPER_ADMIN) return 'SUPER ADMIN';
+    if (role === Role.ADMIN) return 'ADMIN';
+    return 'STUDENT';
+  };
+
+  const userInitial = user?.name ? user.name.trim().charAt(0).toUpperCase() : 'U';
+  const isAdminUser = user?.role === Role.ADMIN || user?.role === Role.SUPER_ADMIN;
 
   return (
     <header className="navbar">
@@ -31,8 +99,7 @@ export const Navbar: React.FC = () => {
             <div className="brand-icon-wrapper" aria-hidden="true">
               <Cpu size={22} />
             </div>
-            <span>CoreHub</span>
-            <span className="brand-badge">P2P CEng</span>
+            <span className="brand-title">CoreHub</span>
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -41,65 +108,168 @@ export const Navbar: React.FC = () => {
               Home
             </NavLink>
             <NavLink to="/marketplace" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <ShoppingBag size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-              Marketplace
+              <ShoppingBag size={15} aria-hidden="true" />
+              <span>Marketplace</span>
             </NavLink>
             <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <LayoutDashboard size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-              Dashboard
+              <LayoutDashboard size={15} aria-hidden="true" />
+              <span>Dashboard</span>
             </NavLink>
             <NavLink to="/my-listings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              My Listings
+              <span>My Listings</span>
             </NavLink>
             <NavLink to="/my-reservations" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <Bookmark size={16} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-              My Reservations
+              <Bookmark size={15} aria-hidden="true" />
+              <span>My Reservations</span>
             </NavLink>
+            {isAdminUser && (
+              <NavLink to="/admin" className={({ isActive }) => `nav-link nav-link-admin ${isActive ? 'active' : ''}`}>
+                <Shield size={15} aria-hidden="true" />
+                <span>Admin</span>
+              </NavLink>
+            )}
           </nav>
 
           {/* Desktop Actions */}
           <div className="navbar-actions">
             {isAuthenticated && user ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    color: 'var(--color-primary-light)',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    padding: '0.25rem 0.6rem',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                  }}
-                  title={`Signed in as ${user.email} (${user.studentId})`}
-                >
-                  <UserIcon size={14} />
-                  <span>{user.name}</span>
-                </span>
+              <div className="nav-user-dropdown-container" ref={accountMenuRef}>
                 <button
+                  ref={accountTriggerRef}
                   type="button"
-                  className="btn btn-sm btn-outline"
-                  onClick={handleLogout}
-                  style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
+                  className={`nav-user-dropdown-btn ${accountMenuOpen ? 'active' : ''}`}
+                  onClick={() => setAccountMenuOpen((prev) => !prev)}
+                  aria-expanded={accountMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label="Account menu"
                 >
-                  <LogOut size={15} />
-                  <span>Log out</span>
+                  <span className="user-avatar-initial" aria-hidden="true">
+                    {userInitial}
+                  </span>
+                  <span className="nav-user-name" title={user.name}>
+                    {user.name}
+                  </span>
+                  {user.role === Role.SUPER_ADMIN && (
+                    <span className="role-pill role-pill-super">Super Admin</span>
+                  )}
+                  {user.role === Role.ADMIN && (
+                    <span className="role-pill role-pill-admin">Admin</span>
+                  )}
+                  <ChevronDown
+                    size={14}
+                    className={`user-caret ${accountMenuOpen ? 'rotate' : ''}`}
+                    aria-hidden="true"
+                  />
                 </button>
+
+                {accountMenuOpen && (
+                  <div
+                    className="nav-user-dropdown-menu"
+                    role="menu"
+                    aria-label="User account options"
+                  >
+                    <div className="dropdown-user-header">
+                      <div className="dropdown-avatar-circle" aria-hidden="true">
+                        {userInitial}
+                      </div>
+                      <div className="dropdown-user-meta">
+                        <div className="dropdown-user-name" title={user.name}>
+                          {user.name}
+                        </div>
+                        <div className="dropdown-user-email" title={user.email}>
+                          {user.email}
+                        </div>
+                        <div className="dropdown-role-row">
+                          <span className={`role-badge role-badge-${user.role.toLowerCase()}`}>
+                            {user.role === Role.SUPER_ADMIN && <Shield size={12} aria-hidden="true" />}
+                            {getRoleLabel(user.role)}
+                          </span>
+                        </div>
+                        {user.studentId && (
+                          <div className="dropdown-student-id-row">
+                            <span className="dropdown-student-id">ID: {user.studentId}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="dropdown-divider" role="separator" />
+
+                    <div className="dropdown-links" role="group">
+                      <Link
+                        to="/profile"
+                        className="dropdown-item dropdown-item-profile"
+                        role="menuitem"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <UserIcon size={15} aria-hidden="true" />
+                        <span>My Profile</span>
+                      </Link>
+                      <Link
+                        to="/dashboard"
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <LayoutDashboard size={15} aria-hidden="true" />
+                        <span>Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/my-listings"
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <ShoppingBag size={15} aria-hidden="true" />
+                        <span>My Listings</span>
+                      </Link>
+                      <Link
+                        to="/my-reservations"
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={() => setAccountMenuOpen(false)}
+                      >
+                        <Bookmark size={15} aria-hidden="true" />
+                        <span>My Reservations</span>
+                      </Link>
+                      {isAdminUser && (
+                        <Link
+                          to="/admin"
+                          className="dropdown-item dropdown-item-admin"
+                          role="menuitem"
+                          onClick={() => setAccountMenuOpen(false)}
+                        >
+                          <Shield size={15} aria-hidden="true" />
+                          <span>Admin Portal</span>
+                        </Link>
+                      )}
+                    </div>
+
+                    <div className="dropdown-divider" role="separator" />
+
+                    <button
+                      type="button"
+                      className="dropdown-item dropdown-item-logout"
+                      role="menuitem"
+                      onClick={handleLogout}
+                    >
+                      <LogOut size={15} aria-hidden="true" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <>
-                <Link to="/login" className="btn btn-sm btn-outline" style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}>
-                  <LogIn size={15} />
+              <div className="nav-auth-buttons">
+                <Link to="/login" className="btn btn-sm btn-outline nav-auth-btn">
+                  <LogIn size={15} aria-hidden="true" />
                   <span>Log in</span>
                 </Link>
-                <Link to="/register" className="btn btn-sm btn-primary">
-                  <UserPlus size={15} />
+                <Link to="/register" className="btn btn-sm btn-primary nav-auth-btn">
+                  <UserPlus size={15} aria-hidden="true" />
                   <span>Register</span>
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
@@ -111,83 +281,117 @@ export const Navbar: React.FC = () => {
             aria-expanded={mobileMenuOpen}
             aria-label="Toggle navigation menu"
           >
-            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {mobileMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>
         </div>
 
-        {/* Mobile Navigation Dropdown */}
+        {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <nav className="mobile-nav-menu" aria-label="Mobile Navigation">
-            <NavLink
-              to="/"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-              end
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/marketplace"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Marketplace
-            </NavLink>
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              Dashboard
-            </NavLink>
-            <NavLink
-              to="/my-listings"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              My Listings
-            </NavLink>
-            <NavLink
-              to="/my-reservations"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={closeMobileMenu}
-            >
-              My Reservations
-            </NavLink>
+            <div className="mobile-nav-links">
+              <NavLink
+                to="/"
+                className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+                end
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/marketplace"
+                className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                <ShoppingBag size={16} aria-hidden="true" />
+                <span>Marketplace</span>
+              </NavLink>
+              <NavLink
+                to="/dashboard"
+                className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                <LayoutDashboard size={16} aria-hidden="true" />
+                <span>Dashboard</span>
+              </NavLink>
+              <NavLink
+                to="/my-listings"
+                className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                <span>My Listings</span>
+              </NavLink>
+              <NavLink
+                to="/my-reservations"
+                className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                onClick={closeMobileMenu}
+              >
+                <Bookmark size={16} aria-hidden="true" />
+                <span>My Reservations</span>
+              </NavLink>
+              {isAuthenticated && (
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) => `mobile-nav-link ${isActive ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <UserIcon size={16} aria-hidden="true" />
+                  <span>My Profile</span>
+                </NavLink>
+              )}
+              {isAdminUser && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) => `mobile-nav-link mobile-nav-link-admin ${isActive ? 'active' : ''}`}
+                  onClick={closeMobileMenu}
+                >
+                  <Shield size={16} aria-hidden="true" />
+                  <span>Admin</span>
+                </NavLink>
+              )}
+            </div>
 
-            <div style={{ marginTop: '0.75rem', padding: '0 0.85rem' }}>
+            <div className="mobile-nav-footer">
               {isAuthenticated && user ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  <div
-                    style={{
-                      fontSize: '0.85rem',
-                      color: 'var(--color-primary-light)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      padding: '0.4rem 0',
-                    }}
-                  >
-                    <UserIcon size={14} />
-                    <span>Signed in as <strong>{user.name}</strong></span>
+                <div className="mobile-user-card">
+                  <div className="mobile-user-info">
+                    <span className="mobile-user-avatar" aria-hidden="true">
+                      {userInitial}
+                    </span>
+                    <div className="mobile-user-details">
+                      <span className="mobile-user-name">{user.name}</span>
+                      <span className="mobile-user-email">{user.email}</span>
+                      <span className={`role-badge role-badge-${user.role.toLowerCase()}`}>
+                        {user.role === Role.SUPER_ADMIN && <Shield size={11} aria-hidden="true" />}
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </div>
                   </div>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline"
+                    className="btn btn-sm btn-outline mobile-logout-btn"
                     onClick={handleLogout}
-                    style={{ width: '100%', color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }}
                   >
-                    <LogOut size={15} />
+                    <LogOut size={15} aria-hidden="true" />
                     <span>Log out</span>
                   </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <Link to="/login" className="btn btn-sm btn-outline" style={{ flex: 1, color: '#ffffff', borderColor: 'rgba(255,255,255,0.2)' }} onClick={closeMobileMenu}>
-                    Log in
+                <div className="mobile-auth-actions">
+                  <Link
+                    to="/login"
+                    className="btn btn-sm btn-outline mobile-auth-btn"
+                    onClick={closeMobileMenu}
+                  >
+                    <LogIn size={15} aria-hidden="true" />
+                    <span>Log in</span>
                   </Link>
-                  <Link to="/register" className="btn btn-sm btn-primary" style={{ flex: 1 }} onClick={closeMobileMenu}>
-                    Register
+                  <Link
+                    to="/register"
+                    className="btn btn-sm btn-primary mobile-auth-btn"
+                    onClick={closeMobileMenu}
+                  >
+                    <UserPlus size={15} aria-hidden="true" />
+                    <span>Register</span>
                   </Link>
                 </div>
               )}

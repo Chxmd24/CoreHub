@@ -79,6 +79,10 @@ public class ReservationService {
         reservationRepository.findByComponentIdAndStatus(component.getId(), ReservationStatus.ACTIVE)
                 .ifPresent(existingActive -> expireReservationIfOverdue(existingActive, now));
 
+        if (component.getModerationStatus() != com.corehub.backend.entity.ModerationStatus.ACTIVE) {
+            throw new ConflictException("Listing is suspended by administration and cannot be reserved");
+        }
+
         if (component.getStatus() != ComponentStatus.AVAILABLE) {
             throw new ConflictException("Listing is not available for reservation (current status: " + component.getStatus() + ")");
         }

@@ -4,6 +4,7 @@ import com.corehub.backend.dto.AuthResponse;
 import com.corehub.backend.dto.LoginRequest;
 import com.corehub.backend.dto.RegisterRequest;
 import com.corehub.backend.dto.UserResponse;
+import com.corehub.backend.entity.Department;
 import com.corehub.backend.entity.Role;
 import com.corehub.backend.entity.User;
 import com.corehub.backend.exception.DuplicateResourceException;
@@ -18,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
+
+    private static final String FACULTY_EMAIL_REGEX = "(?i)^eg[0-9]{6}@engug\\.ruh\\.ac\\.lk$";
+    private static final String STUDENT_ID_REGEX = "(?i)^EG/[0-9]{4}/[0-9]{4}$";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -37,7 +41,15 @@ public class AuthService {
     @Transactional
     public UserResponse register(RegisterRequest request) {
         String normalizedEmail = request.getEmail().trim().toLowerCase();
-        String normalizedStudentId = request.getStudentId().trim();
+        String normalizedStudentId = request.getStudentId().trim().toUpperCase();
+
+        if (!normalizedEmail.matches(FACULTY_EMAIL_REGEX)) {
+            throw new IllegalArgumentException("Email must be a valid faculty email in the format egXXXXXX@engug.ruh.ac.lk");
+        }
+
+        if (!normalizedStudentId.matches(STUDENT_ID_REGEX)) {
+            throw new IllegalArgumentException("Student ID must be in the format EG/XXXX/XXXX");
+        }
 
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new DuplicateResourceException("Email is already registered: " + normalizedEmail);
@@ -47,13 +59,23 @@ public class AuthService {
             throw new DuplicateResourceException("Student ID is already registered: " + normalizedStudentId);
         }
 
+        if (request.getPhone() == null || request.getPhone().trim().isBlank()) {
+            throw new IllegalArgumentException("Phone number is required");
+        }
+        String normalizedPhone = request.getPhone().trim();
+        if (normalizedPhone.length() > 20) {
+            throw new IllegalArgumentException("Phone must not exceed 20 characters");
+        }
+
+        String normalizedDepartment = Department.normalizeOrThrow(request.getDepartment());
+
         User user = new User(
                 normalizedStudentId,
                 request.getName().trim(),
                 normalizedEmail,
                 passwordEncoder.encode(request.getPassword()),
-                request.getPhone(),
-                request.getDepartment(),
+                normalizedPhone,
+                normalizedDepartment,
                 Role.USER // Always assign USER role for public registration
         );
 

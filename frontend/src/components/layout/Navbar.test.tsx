@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { Navbar } from './Navbar';
@@ -15,6 +15,28 @@ const mockUser: UserResponse = {
   department: 'Computer Engineering',
   role: Role.USER,
   createdAt: '2026-10-27T10:00:00Z',
+};
+
+const mockAdminUser: UserResponse = {
+  id: 2,
+  name: 'Admin Kasun',
+  studentId: 'E/18/100',
+  email: 'kasun@eng.pdn.ac.lk',
+  phone: '+94772223344',
+  department: 'Computer Engineering',
+  role: Role.ADMIN,
+  createdAt: '2026-10-25T10:00:00Z',
+};
+
+const mockSuperAdminUser: UserResponse = {
+  id: 3,
+  name: 'Super Admin Chamod',
+  studentId: 'EG/2020/0001',
+  email: 'superadmin@engug.ruh.ac.lk',
+  phone: '+94779998877',
+  department: 'Computer Engineering',
+  role: Role.SUPER_ADMIN,
+  createdAt: '2026-10-20T10:00:00Z',
 };
 
 describe('Navbar Component', () => {
@@ -37,9 +59,9 @@ describe('Navbar Component', () => {
     });
   };
 
-  const setupAuthenticated = () => {
+  const setupAuthenticated = (user: UserResponse = mockUser) => {
     vi.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
-      user: mockUser,
+      user,
       token: 'jwt-token-123',
       isAuthenticated: true,
       isLoading: false,
@@ -50,7 +72,7 @@ describe('Navbar Component', () => {
     });
   };
 
-  it('renders brand name and community badge', () => {
+  it('renders brand name and confirms community badge is removed', () => {
     setupUnauthenticated();
     render(
       <BrowserRouter>
@@ -59,7 +81,7 @@ describe('Navbar Component', () => {
     );
 
     expect(screen.getByText('CoreHub')).toBeInTheDocument();
-    expect(screen.getByText('P2P CEng')).toBeInTheDocument();
+    expect(screen.queryByText('P2P CEng')).not.toBeInTheDocument();
   });
 
   it('renders primary desktop navigation links', () => {
@@ -88,15 +110,17 @@ describe('Navbar Component', () => {
       </BrowserRouter>
     );
 
-    const loginLink = screen.getByRole('link', { name: /log in/i });
-    const registerLink = screen.getByRole('link', { name: /register/i });
+    const loginLinks = screen.getAllByRole('link', { name: /log in/i });
+    const registerLinks = screen.getAllByRole('link', { name: /register/i });
 
-    expect(loginLink).toHaveAttribute('href', '/login');
-    expect(registerLink).toHaveAttribute('href', '/register');
-    expect(screen.queryByRole('button', { name: /log out/i })).not.toBeInTheDocument();
+    expect(loginLinks.length).toBeGreaterThan(0);
+    expect(registerLinks.length).toBeGreaterThan(0);
+    expect(loginLinks[0]).toHaveAttribute('href', '/login');
+    expect(registerLinks[0]).toHaveAttribute('href', '/register');
+    expect(screen.queryByRole('button', { name: /account menu/i })).not.toBeInTheDocument();
   });
 
-  it('renders student identity and Log out button when student is authenticated', async () => {
+  it('renders student identity in compact profile button and allows logging out via dropdown', async () => {
     const user = userEvent.setup();
     setupAuthenticated();
 
@@ -106,19 +130,137 @@ describe('Navbar Component', () => {
       </BrowserRouter>
     );
 
+    // Profile button displays the authenticated user's name
     expect(screen.getByText('Chamod Perera')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /log in/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /register/i })).not.toBeInTheDocument();
 
-    const logoutButtons = screen.getAllByRole('button', { name: /log out/i });
-    expect(logoutButtons.length).toBeGreaterThan(0);
+    const accountBtn = screen.getByRole('button', { name: /account menu/i });
+    expect(accountBtn).toBeInTheDocument();
+    expect(accountBtn).toHaveAttribute('aria-expanded', 'false');
 
-    // Click desktop logout button
-    await user.click(logoutButtons[0]);
+    // Click profile button to open dropdown
+    await user.click(accountBtn);
+    expect(accountBtn).toHaveAttribute('aria-expanded', 'true');
+
+    // Dropdown reveals details, student badge, and actions
+    const menu = screen.getByRole('menu', { name: /user account options/i });
+    expect(menu).toBeInTheDocument();
+    expect(screen.getByText('chamod@eng.pdn.ac.lk')).toBeInTheDocument();
+    expect(screen.getByText('STUDENT')).toBeInTheDocument();
+    expect(screen.getByText('ID: E/19/042')).toBeInTheDocument();
+
+    // My Profile link is present in dropdown
+    const profileItem = screen.getByRole('menuitem', { name: /my profile/i });
+    expect(profileItem).toBeInTheDocument();
+    expect(profileItem).toHaveAttribute('href', '/profile');
+
+    // Click log out menuitem
+    const logoutMenuItem = screen.getByRole('menuitem', { name: /log out/i });
+    await user.click(logoutMenuItem);
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
-  it('toggles mobile menu dropdown when hamburger button is clicked', async () => {
+  it('closes account dropdown on Escape key and refocuses trigger button', async () => {
+    const user = userEvent.setup();
+    setupAuthenticated();
+
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
+
+    const accountBtn = screen.getByRole('button', { name: /account menu/i });
+    await user.click(accountBtn);
+    expect(screen.getByRole('menu', { name: /user account options/i })).toBeInTheDocument();
+
+    // Press Escape
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    expect(screen.queryByRole('menu', { name: /user account options/i })).not.toBeInTheDocument();
+  });
+
+  it('closes account dropdown when clicking outside', async () => {
+    const user = userEvent.setup();
+    setupAuthenticated();
+
+    render(
+      <BrowserRouter>
+        <div>
+          <div data-testid="outside-area">Outside</div>
+          <Navbar />
+        </div>
+      </BrowserRouter>
+    );
+
+    const accountBtn = screen.getByRole('button', { name: /account menu/i });
+    await user.click(accountBtn);
+    expect(screen.getByRole('menu', { name: /user account options/i })).toBeInTheDocument();
+
+    // Click outside
+    fireEvent.mouseDown(screen.getByTestId('outside-area'));
+    expect(screen.queryByRole('menu', { name: /user account options/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Admin link and Admin pill for ADMIN role', () => {
+    setupAuthenticated(mockAdminUser);
+
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
+
+    // Desktop nav shows Admin link
+    const desktopNav = screen.getByRole('navigation', { name: 'Main Navigation' });
+    expect(desktopNav).toBeInTheDocument();
+    const adminLink = screen.getByRole('link', { name: /admin/i });
+    expect(adminLink).toHaveAttribute('href', '/admin');
+
+    // Trigger button displays Admin role pill
+    const accountBtn = screen.getByRole('button', { name: /account menu/i });
+    expect(accountBtn).toHaveTextContent('Admin');
+    expect(accountBtn.querySelector('.role-pill-admin')).toBeInTheDocument();
+  });
+
+  it('shows Admin link and Super Admin pill with gold styling for SUPER_ADMIN role', async () => {
+    const user = userEvent.setup();
+    setupAuthenticated(mockSuperAdminUser);
+
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
+
+    // Desktop nav shows Admin link
+    const adminLink = screen.getByRole('link', { name: /admin/i });
+    expect(adminLink).toHaveAttribute('href', '/admin');
+
+    // Trigger shows Super Admin pill
+    expect(screen.getByText('Super Admin')).toBeInTheDocument();
+
+    // Open dropdown to check SUPER ADMIN role badge and Admin Portal link
+    await user.click(screen.getByRole('button', { name: /account menu/i }));
+    const superAdminBadge = screen.getByText('SUPER ADMIN');
+    expect(superAdminBadge).toBeInTheDocument();
+    expect(superAdminBadge).toHaveClass('role-badge-super_admin');
+    expect(screen.getByRole('menuitem', { name: /admin portal/i })).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('menuitem', { name: /my profile/i })).toHaveAttribute('href', '/profile');
+  });
+
+  it('hides Admin navigation link for standard USER role', () => {
+    setupAuthenticated(mockUser);
+
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
+
+    expect(screen.queryByRole('link', { name: /admin/i })).not.toBeInTheDocument();
+  });
+
+  it('toggles mobile menu drawer when hamburger button is clicked', async () => {
     const user = userEvent.setup();
     setupUnauthenticated();
 
@@ -140,5 +282,29 @@ describe('Navbar Component', () => {
     await user.click(toggleButton);
     expect(toggleButton).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('navigation', { name: 'Mobile Navigation' })).not.toBeInTheDocument();
+  });
+
+  it('allows authenticated student to log out from mobile drawer', async () => {
+    const user = userEvent.setup();
+    setupAuthenticated();
+
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
+
+    // Open mobile menu
+    await user.click(screen.getByRole('button', { name: /toggle navigation menu/i }));
+    const mobileNav = screen.getByRole('navigation', { name: 'Mobile Navigation' });
+    expect(mobileNav).toBeInTheDocument();
+
+    // Mobile drawer displays My Profile link
+    expect(screen.getByRole('link', { name: /my profile/i })).toHaveAttribute('href', '/profile');
+
+    // Mobile drawer displays user identity
+    const mobileLogoutBtn = screen.getByRole('button', { name: /log out/i });
+    await user.click(mobileLogoutBtn);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 });

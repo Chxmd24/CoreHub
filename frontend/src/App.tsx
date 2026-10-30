@@ -11,6 +11,9 @@ import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { MyListingsPage } from './pages/MyListingsPage';
 import { MyReservationsPage } from './pages/MyReservationsPage';
+import { MyProfilePage } from './pages/MyProfilePage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { AdminRoute } from './components/common/AdminRoute';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export const AppRoutes: React.FC = () => {
@@ -46,6 +49,24 @@ export const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <MyReservationsPage />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <MyProfilePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Administrative multi-admin portal */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminDashboardPage />
+          </AdminRoute>
         }
       />
 

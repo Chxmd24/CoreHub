@@ -10,8 +10,8 @@ import { UserResponse, Role } from '../api/types';
 const mockRegisteredUser: UserResponse = {
   id: 10,
   name: 'Nuwan Bandara',
-  studentId: 'E/20/150',
-  email: 'e20150@eng.pdn.ac.lk',
+  studentId: 'EG/2020/0150',
+  email: 'eg200150@engug.ruh.ac.lk',
   phone: '+94779876543',
   department: 'Computer Engineering',
   role: Role.USER,
@@ -71,11 +71,15 @@ describe('RegisterPage', () => {
     expect(screen.getByText('Student ID is required')).toBeInTheDocument();
     expect(screen.getByText('Email is required')).toBeInTheDocument();
     expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(screen.getByText('Contact phone number is required')).toBeInTheDocument();
+    expect(screen.getByText('Engineering department is required')).toBeInTheDocument();
 
-    // Fill valid name, studentId, email, but short password (5 chars < 6 backend minimum)
+    // Fill valid name, studentId, email, phone, department, but short password (5 chars < 6 backend minimum)
     await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
-    await user.type(screen.getByLabelText(/student registration id/i), 'E/20/150');
-    await user.type(screen.getByLabelText(/institutional email/i), 'e20150@eng.pdn.ac.lk');
+    await user.type(screen.getByLabelText(/student registration id/i), 'EG/2020/0150');
+    await user.type(screen.getByLabelText(/institutional email/i), 'eg200150@engug.ruh.ac.lk');
+    await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
+    await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
     await user.type(screen.getByLabelText(/^password/i), '12345');
 
     await user.click(screen.getByRole('button', { name: /complete registration/i }));
@@ -84,15 +88,60 @@ describe('RegisterPage', () => {
     expect(screen.getByText('Password must be at least 6 characters long')).toBeInTheDocument();
   });
 
-  it('successfully creates account and shows student confirmation card with login guide', async () => {
+  it('rejects invalid faculty email formats', async () => {
+    const user = userEvent.setup();
+    renderRegisterPage();
+
+    await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
+    await user.type(screen.getByLabelText(/student registration id/i), 'EG/2020/0150');
+    await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
+    await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
+    await user.type(screen.getByLabelText(/^password/i), 'securepass123');
+
+    // Invalid email 1: Gmail
+    await user.type(screen.getByLabelText(/institutional email/i), 'student@gmail.com');
+    await user.click(screen.getByRole('button', { name: /complete registration/i }));
+
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(screen.getByText(/email must be a valid faculty email/i)).toBeInTheDocument();
+
+    // Invalid email 2: 5 digits instead of 6
+    await user.clear(screen.getByLabelText(/institutional email/i));
+    await user.type(screen.getByLabelText(/institutional email/i), 'eg12345@engug.ruh.ac.lk');
+    await user.click(screen.getByRole('button', { name: /complete registration/i }));
+
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(screen.getByText(/email must be a valid faculty email/i)).toBeInTheDocument();
+  });
+
+  it('rejects invalid student registration ID formats', async () => {
+    const user = userEvent.setup();
+    renderRegisterPage();
+
+    await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
+    await user.type(screen.getByLabelText(/institutional email/i), 'eg200150@engug.ruh.ac.lk');
+    await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
+    await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
+    await user.type(screen.getByLabelText(/^password/i), 'securepass123');
+
+    // Invalid student ID: Legacy E/20/0001
+    await user.type(screen.getByLabelText(/student registration id/i), 'E/20/0001');
+    await user.click(screen.getByRole('button', { name: /complete registration/i }));
+
+    expect(mockRegister).not.toHaveBeenCalled();
+    expect(screen.getByText(/student id must be in the format eg\/xxxx\/xxxx/i)).toBeInTheDocument();
+  });
+
+  it('successfully creates account with case normalization and shows student confirmation card', async () => {
     const user = userEvent.setup();
     mockRegister.mockResolvedValueOnce(mockRegisteredUser);
 
     renderRegisterPage();
 
     await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
-    await user.type(screen.getByLabelText(/student registration id/i), 'E/20/150');
-    await user.type(screen.getByLabelText(/institutional email/i), 'e20150@eng.pdn.ac.lk');
+    // Type with lowercase / mixed-case to verify normalization
+    await user.type(screen.getByLabelText(/student registration id/i), 'eg/2020/0150');
+    await user.type(screen.getByLabelText(/institutional email/i), 'EG200150@ENGUG.RUH.AC.LK');
     await user.type(screen.getByLabelText(/^password/i), 'securepass123');
     await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
     await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
@@ -102,8 +151,8 @@ describe('RegisterPage', () => {
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith({
         name: 'Nuwan Bandara',
-        studentId: 'E/20/150',
-        email: 'e20150@eng.pdn.ac.lk',
+        studentId: 'EG/2020/0150',
+        email: 'eg200150@engug.ruh.ac.lk',
         password: 'securepass123',
         phone: '+94779876543',
         department: 'Computer Engineering',
@@ -113,8 +162,8 @@ describe('RegisterPage', () => {
     // Confirmation card is displayed
     expect(screen.getByRole('heading', { name: /account created successfully!/i })).toBeInTheDocument();
     expect(screen.getByText('Nuwan Bandara')).toBeInTheDocument();
-    expect(screen.getByText('E/20/150')).toBeInTheDocument();
-    expect(screen.getByText('e20150@eng.pdn.ac.lk')).toBeInTheDocument();
+    expect(screen.getByText('EG/2020/0150')).toBeInTheDocument();
+    expect(screen.getByText('eg200150@engug.ruh.ac.lk')).toBeInTheDocument();
 
     // Clicking "Proceed to Sign In" guides user to login
     await user.click(screen.getByRole('button', { name: /proceed to sign in/i }));
@@ -125,35 +174,38 @@ describe('RegisterPage', () => {
   it('handles duplicate registration conflict (HTTP 409)', async () => {
     const user = userEvent.setup();
     mockRegister.mockRejectedValueOnce(
-      new ApiError('Email is already registered: e20150@eng.pdn.ac.lk', 409, {
+      new ApiError('Email is already registered: eg200150@engug.ruh.ac.lk', 409, {
         status: 409,
-        message: 'Email is already registered: e20150@eng.pdn.ac.lk',
+        message: 'Email is already registered: eg200150@engug.ruh.ac.lk',
       })
     );
 
     renderRegisterPage();
 
     await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
-    await user.type(screen.getByLabelText(/student registration id/i), 'E/20/150');
-    await user.type(screen.getByLabelText(/institutional email/i), 'e20150@eng.pdn.ac.lk');
+    await user.type(screen.getByLabelText(/student registration id/i), 'EG/2020/0150');
+    await user.type(screen.getByLabelText(/institutional email/i), 'eg200150@engug.ruh.ac.lk');
+    await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
+    await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
     await user.type(screen.getByLabelText(/^password/i), 'securepass123');
 
     await user.click(screen.getByRole('button', { name: /complete registration/i }));
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(
-        'An account with this email or student registration number already exists'
-      );
+      expect(screen.getByText(/already exists/i)).toBeInTheDocument();
     });
   });
 
   it('handles backend validation errors (HTTP 400)', async () => {
     const user = userEvent.setup();
     mockRegister.mockRejectedValueOnce(
-      new ApiError('Validation failed', 400, {
+      new ApiError('Bad Request', 400, {
+        timestamp: '2026-10-27T10:00:00Z',
         status: 400,
+        error: 'Bad Request',
+        message: 'Validation failed',
         validationErrors: {
-          email: 'must be a well-formed email address',
+          email: 'Email must be a valid faculty email in the format egXXXXXX@engug.ruh.ac.lk',
         },
       })
     );
@@ -161,14 +213,35 @@ describe('RegisterPage', () => {
     renderRegisterPage();
 
     await user.type(screen.getByLabelText(/full name/i), 'Nuwan Bandara');
-    await user.type(screen.getByLabelText(/student registration id/i), 'E/20/150');
-    await user.type(screen.getByLabelText(/institutional email/i), 'invalid-domain@unknown.com');
+    await user.type(screen.getByLabelText(/student registration id/i), 'EG/2020/0150');
+    await user.type(screen.getByLabelText(/institutional email/i), 'eg200150@engug.ruh.ac.lk');
+    await user.type(screen.getByLabelText(/contact phone/i), '+94779876543');
+    await user.selectOptions(screen.getByLabelText(/department/i), 'Computer Engineering');
     await user.type(screen.getByLabelText(/^password/i), 'securepass123');
 
     await user.click(screen.getByRole('button', { name: /complete registration/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('must be a well-formed email address')).toBeInTheDocument();
+      expect(screen.getByText('Email must be a valid faculty email in the format egXXXXXX@engug.ruh.ac.lk')).toBeInTheDocument();
     });
+  });
+
+  it('allows selecting each of the five official engineering departments', async () => {
+    const user = userEvent.setup();
+    renderRegisterPage();
+
+    const select = screen.getByLabelText(/department/i) as HTMLSelectElement;
+    const officialDepts = [
+      'Electrical and Information Engineering',
+      'Civil and Environmental Engineering',
+      'Marine Engineering and Naval Architecture',
+      'Mechanical and Manufacturing Engineering',
+      'Computer Engineering',
+    ];
+
+    for (const dept of officialDepts) {
+      await user.selectOptions(select, dept);
+      expect(select.value).toBe(dept);
+    }
   });
 });

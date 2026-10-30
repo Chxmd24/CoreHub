@@ -3,6 +3,7 @@ package com.corehub.backend.dto;
 import com.corehub.backend.entity.Component;
 import com.corehub.backend.entity.ComponentStatus;
 import com.corehub.backend.entity.ListingType;
+import com.corehub.backend.entity.ModerationStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +18,8 @@ public class ComponentResponse {
     private ListingType listingType;
     private BigDecimal price;
     private ComponentStatus status;
+    private ModerationStatus moderationStatus = ModerationStatus.ACTIVE;
+    private String moderationReason;
     private Long ownerId;
     private String ownerName;
     private LocalDateTime createdAt;
@@ -29,6 +32,15 @@ public class ComponentResponse {
                              String specifications, ListingType listingType, BigDecimal price,
                              ComponentStatus status, Long ownerId, String ownerName,
                              LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(id, title, description, category, specifications, listingType, price, status,
+                ModerationStatus.ACTIVE, null, ownerId, ownerName, createdAt, updatedAt);
+    }
+
+    public ComponentResponse(Long id, String title, String description, String category,
+                             String specifications, ListingType listingType, BigDecimal price,
+                             ComponentStatus status, ModerationStatus moderationStatus,
+                             String moderationReason, Long ownerId, String ownerName,
+                             LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -37,6 +49,8 @@ public class ComponentResponse {
         this.listingType = listingType;
         this.price = price;
         this.status = status;
+        this.moderationStatus = (moderationStatus != null) ? moderationStatus : ModerationStatus.ACTIVE;
+        this.moderationReason = moderationReason;
         this.ownerId = ownerId;
         this.ownerName = ownerName;
         this.createdAt = createdAt;
@@ -59,6 +73,8 @@ public class ComponentResponse {
                 component.getListingType(),
                 component.getPrice(),
                 component.getStatus(),
+                component.getModerationStatus(),
+                component.getModerationReason(),
                 ownerId,
                 ownerName,
                 component.getCreatedAt(),
@@ -128,6 +144,22 @@ public class ComponentResponse {
 
     public void setStatus(ComponentStatus status) {
         this.status = status;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public void setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
+    }
+
+    public String getModerationReason() {
+        return moderationReason;
+    }
+
+    public void setModerationReason(String moderationReason) {
+        this.moderationReason = moderationReason;
     }
 
     public Long getOwnerId() {

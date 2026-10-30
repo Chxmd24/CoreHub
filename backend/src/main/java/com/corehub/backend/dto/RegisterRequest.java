@@ -1,7 +1,7 @@
 package com.corehub.backend.dto;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequest {
@@ -11,22 +11,32 @@ public class RegisterRequest {
     private String name;
 
     @NotBlank(message = "Student ID is required")
-    @Size(max = 50, message = "Student ID must not exceed 50 characters")
+    @Pattern(
+        regexp = "(?i)^EG/[0-9]{4}/[0-9]{4}$",
+        message = "Student ID must be in the format EG/XXXX/XXXX"
+    )
     private String studentId;
 
     @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
-    @Size(max = 150, message = "Email must not exceed 150 characters")
+    @Pattern(
+        regexp = "(?i)^eg[0-9]{6}@engug\\.ruh\\.ac\\.lk$",
+        message = "Email must be a valid faculty email in the format egXXXXXX@engug.ruh.ac.lk"
+    )
     private String email;
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters long")
     private String password;
 
+    @NotBlank(message = "Phone number is required")
     @Size(max = 20, message = "Phone must not exceed 20 characters")
     private String phone;
 
-    @Size(max = 100, message = "Department must not exceed 100 characters")
+    @NotBlank(message = "Department is required")
+    @Pattern(
+        regexp = "(?i)^(Electrical and Information Engineering|Civil and Environmental Engineering|Marine Engineering and Naval Architecture|Mechanical and Manufacturing Engineering|Computer Engineering)$",
+        message = "Department must be one of the five supported engineering departments"
+    )
     private String department;
 
     public RegisterRequest() {

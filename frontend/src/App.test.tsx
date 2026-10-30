@@ -140,6 +140,15 @@ describe('CoreHub Application Routing and Route Protection', () => {
     expect(screen.getByText(/please sign in with your student account to access this page/i)).toBeInTheDocument();
   });
 
+  it('redirects unauthenticated students attempting to access "/profile" to "/login"', async () => {
+    renderAppWithRoute('/profile');
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /student sign in/i })).toBeInTheDocument();
+    });
+    expect(screen.getByText(/please sign in with your student account to access this page/i)).toBeInTheDocument();
+  });
+
   it('allows access to protected routes when authenticated token exists', async () => {
     localStorage.setItem(TOKEN_KEY, 'valid-active-session-jwt');
 

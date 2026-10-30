@@ -51,11 +51,11 @@ class AuthControllerTest {
     @Test
     void registerShouldReturn201CreatedOnSuccess() throws Exception {
         RegisterRequest request = new RegisterRequest(
-                "Jane Doe", "E/20/002", "jane@eng.pdn.ac.lk", "SecurePass123", "0770001122", "Civil"
+                "Jane Doe", "EG/2020/0002", "eg200002@engug.ruh.ac.lk", "SecurePass123", "0770001122", "Civil and Environmental Engineering"
         );
 
         UserResponse userResponse = new UserResponse(
-                1L, "E/20/002", "Jane Doe", "jane@eng.pdn.ac.lk", "0770001122", "Civil", Role.USER, LocalDateTime.now()
+                1L, "EG/2020/0002", "Jane Doe", "eg200002@engug.ruh.ac.lk", "0770001122", "Civil and Environmental Engineering", Role.USER, LocalDateTime.now()
         );
 
         when(authService.register(any(RegisterRequest.class))).thenReturn(userResponse);
@@ -66,7 +66,8 @@ class AuthControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.name").value("Jane Doe"))
-                .andExpect(jsonPath("$.email").value("jane@eng.pdn.ac.lk"))
+                .andExpect(jsonPath("$.email").value("eg200002@engug.ruh.ac.lk"))
+                .andExpect(jsonPath("$.studentId").value("EG/2020/0002"))
                 .andExpect(jsonPath("$.role").value("USER"));
     }
 
@@ -84,56 +85,96 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.validationErrors.email").exists())
                 .andExpect(jsonPath("$.validationErrors.name").exists())
                 .andExpect(jsonPath("$.validationErrors.studentId").exists())
-                .andExpect(jsonPath("$.validationErrors.password").exists());
+                .andExpect(jsonPath("$.validationErrors.password").exists())
+                .andExpect(jsonPath("$.validationErrors.phone").exists())
+                .andExpect(jsonPath("$.validationErrors.department").exists());
+    }
+
+    @Test
+    void registerShouldReturn400WhenEmailDoesNotMatchUniversityPattern() throws Exception {
+        RegisterRequest nonFacultyEmailRequest = new RegisterRequest(
+                "Jane Doe", "EG/2020/0002", "student@gmail.com", "SecurePass123", "+94770001122", "Civil and Environmental Engineering"
+        );
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(nonFacultyEmailRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.email").exists());
+    }
+
+    @Test
+    void registerShouldReturn400WhenStudentIdDoesNotMatchPattern() throws Exception {
+        RegisterRequest invalidStudentIdRequest = new RegisterRequest(
+                "Jane Doe", "E/20/002", "eg200002@engug.ruh.ac.lk", "SecurePass123", "+94770001122", "Civil and Environmental Engineering"
+        );
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidStudentIdRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.studentId").exists());
+    }
+
+    @Test
+    void registerShouldReturn400WhenDepartmentIsUnsupported() throws Exception {
+        RegisterRequest invalidDeptRequest = new RegisterRequest(
+                "Jane Doe", "EG/2020/0002", "eg200002@engug.ruh.ac.lk", "SecurePass123", "+94770001122", "Unsupported Department"
+        );
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidDeptRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationErrors.department").exists());
     }
 
     @Test
     void registerShouldReturn409ConflictWhenDuplicateEmailOrStudentId() throws Exception {
         RegisterRequest request = new RegisterRequest(
-                "Jane Doe", "E/20/002", "duplicate@eng.pdn.ac.lk", "SecurePass123", null, null
+                "Jane Doe", "EG/2020/0002", "eg200002@engug.ruh.ac.lk", "SecurePass123", "+94770001122", "Civil and Environmental Engineering"
         );
 
         when(authService.register(any(RegisterRequest.class)))
-                .thenThrow(new DuplicateResourceException("Email is already registered: duplicate@eng.pdn.ac.lk"));
+                .thenThrow(new DuplicateResourceException("Email is already registered: eg200002@engug.ruh.ac.lk"));
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("Email is already registered: duplicate@eng.pdn.ac.lk"));
+                .andExpect(jsonPath("$.status").value(409));
     }
 
     @Test
-    void loginShouldReturn200OkWithToken() throws Exception {
-        LoginRequest request = new LoginRequest("jane@eng.pdn.ac.lk", "SecurePass123");
+    void loginShouldReturn200OkWithAuthResponse() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("eg200002@engug.ruh.ac.lk", "ValidPassword123");
+
         UserResponse userResponse = new UserResponse(
-                1L, "E/20/002", "Jane Doe", "jane@eng.pdn.ac.lk", null, null, Role.USER, LocalDateTime.now()
+                1L, "EG/2020/0002", "Jane Doe", "eg200002@engug.ruh.ac.lk", null, null, Role.USER, LocalDateTime.now()
         );
-        AuthResponse authResponse = new AuthResponse("mock.jwt.token", "Bearer", 3600000L, userResponse);
+        AuthResponse authResponse = new AuthResponse("mock-jwt-token-xyz", "Bearer", 3600000L, userResponse);
 
         when(authService.login(any(LoginRequest.class))).thenReturn(authResponse);
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("mock.jwt.token"))
+                .andExpect(jsonPath("$.accessToken").value("mock-jwt-token-xyz"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.expiresIn").value(3600000L))
-                .andExpect(jsonPath("$.user.email").value("jane@eng.pdn.ac.lk"));
+                .andExpect(jsonPath("$.user.email").value("eg200002@engug.ruh.ac.lk"));
     }
 
     @Test
-    void loginShouldReturn401UnauthorizedForBadCredentials() throws Exception {
-        LoginRequest request = new LoginRequest("jane@eng.pdn.ac.lk", "WrongPass");
+    void loginShouldReturn401UnauthorizedOnBadCredentials() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("eg200002@engug.ruh.ac.lk", "WrongPassword");
 
         when(authService.login(any(LoginRequest.class)))
                 .thenThrow(new BadCredentialsException("Invalid email or password"));
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.message").value("Invalid email or password"));

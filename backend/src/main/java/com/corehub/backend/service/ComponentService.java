@@ -8,6 +8,9 @@ import com.corehub.backend.entity.ComponentStatus;
 import com.corehub.backend.entity.ListingType;
 import com.corehub.backend.entity.Reservation;
 import com.corehub.backend.entity.ReservationStatus;
+import com.corehub.backend.entity.ModerationStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.corehub.backend.entity.User;
 import com.corehub.backend.exception.ConflictException;
 import com.corehub.backend.exception.ResourceNotFoundException;
@@ -58,6 +61,9 @@ public class ComponentService {
             ComponentStatus targetStatus = (status != null) ? status : ComponentStatus.AVAILABLE;
             predicates.add(cb.equal(root.get("status"), targetStatus));
 
+            // Moderation filter: publicly visible listings must be ACTIVE (not suspended)
+            predicates.add(cb.equal(root.get("moderationStatus"), ModerationStatus.ACTIVE));
+
             // Category filter
             if (category != null && !category.trim().isEmpty()) {
                 predicates.add(cb.equal(cb.lower(root.get("category")), category.trim().toLowerCase()));
@@ -88,6 +94,23 @@ public class ComponentService {
     public ComponentResponse getComponentById(Long id) {
         Component component = componentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Component listing not found with ID: " + id));
+
+        if (component.getModerationStatus() == ModerationStatus.SUSPENDED) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isOwnerOrAdmin = false;
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                String email = auth.getName();
+                boolean isAdmin = auth.getAuthorities().stream().anyMatch(a ->
+                        "ROLE_ADMIN".equals(a.getAuthority()) || "ROLE_SUPER_ADMIN".equals(a.getAuthority())
+                );
+                boolean isOwner = component.getOwner() != null && email.equalsIgnoreCase(component.getOwner().getEmail());
+                isOwnerOrAdmin = isAdmin || isOwner;
+            }
+            if (!isOwnerOrAdmin) {
+                throw new ResourceNotFoundException("Component listing not found with ID: " + id);
+            }
+        }
+
         return ComponentResponse.fromEntity(component);
     }
 

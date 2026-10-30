@@ -3,6 +3,7 @@ package com.corehub.backend.repository;
 import com.corehub.backend.entity.Component;
 import com.corehub.backend.entity.ComponentStatus;
 import com.corehub.backend.entity.ListingType;
+import com.corehub.backend.entity.ModerationStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,4 +37,10 @@ public interface ComponentRepository extends JpaRepository<Component, Long>, Jpa
     List<Component> findByListingType(ListingType listingType);
 
     List<Component> findByStatusAndListingType(ComponentStatus status, ListingType listingType);
+
+    long countByStatus(ComponentStatus status);
+
+    long countByModerationStatus(ModerationStatus moderationStatus);
+
+    long countByOwnerId(Long ownerId);
 }

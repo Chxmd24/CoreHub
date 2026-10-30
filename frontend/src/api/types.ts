@@ -5,6 +5,7 @@
 export enum Role {
   USER = 'USER',
   ADMIN = 'ADMIN',
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 export enum ListingType {
@@ -19,12 +20,27 @@ export enum ComponentStatus {
   EXCHANGED = 'EXCHANGED',
 }
 
+export enum ModerationStatus {
+  ACTIVE = 'ACTIVE',
+  SUSPENDED = 'SUSPENDED',
+}
+
 export enum ReservationStatus {
   ACTIVE = 'ACTIVE',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED',
 }
+
+export const SUPPORTED_DEPARTMENTS = [
+  'Electrical and Information Engineering',
+  'Civil and Environmental Engineering',
+  'Marine Engineering and Naval Architecture',
+  'Mechanical and Manufacturing Engineering',
+  'Computer Engineering',
+] as const;
+
+export type SupportedDepartment = (typeof SUPPORTED_DEPARTMENTS)[number];
 
 export interface UserResponse {
   id: number;
@@ -42,13 +58,19 @@ export interface RegisterRequest {
   studentId: string;
   email: string;
   password: string;
-  phone?: string | null;
-  department?: string | null;
+  phone: string;
+  department: string;
 }
 
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+export interface UpdateProfileRequest {
+  name: string;
+  phone: string;
+  department: string;
 }
 
 export interface ComponentRequest {
@@ -76,6 +98,8 @@ export interface ComponentResponse {
   listingType: ListingType;
   price?: number | null;
   status: ComponentStatus;
+  moderationStatus?: ModerationStatus;
+  moderationReason?: string | null;
   ownerId: number;
   ownerName: string;
   createdAt: string;
@@ -122,4 +146,76 @@ export interface ApiErrorResponse {
   message: string;
   timestamp?: string;
   validationErrors?: Record<string, string>;
+}
+
+// ==========================================
+// Admin DTOs
+// ==========================================
+
+export interface AdminOverviewResponse {
+  totalUsers: number;
+  totalAdmins: number;
+  totalSuperAdmins: number;
+  totalListings: number;
+  availableListings: number;
+  reservedListings: number;
+  exchangedListings: number;
+  moderatedListings: number;
+  totalReservations: number;
+  activeReservations: number;
+  completedReservations: number;
+  cancelledReservations: number;
+  expiredReservations: number;
+  totalAuditLogs: number;
+}
+
+export interface AdminUserResponse {
+  id: number;
+  studentId: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  department?: string | null;
+  role: Role;
+  createdAt: string;
+  listingCount: number;
+  reservationCount: number;
+}
+
+export interface UpdateUserRoleRequest {
+  role: Role;
+}
+
+export interface ModerateListingRequest {
+  action: 'SUSPEND' | 'REINSTATE';
+  reason?: string;
+}
+
+export interface AdminListingResponse {
+  id: number;
+  title: string;
+  category: string;
+  listingType: ListingType;
+  price?: number | null;
+  status: ComponentStatus;
+  moderationStatus: ModerationStatus;
+  moderationReason?: string | null;
+  moderatedAt?: string | null;
+  moderatedBy?: string | null;
+  ownerId: number;
+  ownerName: string;
+  ownerEmail?: string | null;
+  createdAt: string;
+}
+
+export interface AdminAuditLogResponse {
+  id: number;
+  actorId?: number | null;
+  actorEmail: string;
+  actorRole: string;
+  action: string;
+  targetType: string;
+  targetId: number;
+  details?: string | null;
+  timestamp: string;
 }

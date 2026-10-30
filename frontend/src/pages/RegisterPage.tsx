@@ -14,7 +14,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { UserResponse } from '../api/types';
+import { UserResponse, SUPPORTED_DEPARTMENTS, SupportedDepartment } from '../api/types';
 import { ApiError } from '../api/client';
 
 export const RegisterPage: React.FC = () => {
@@ -25,7 +25,7 @@ export const RegisterPage: React.FC = () => {
     name: '',
     studentId: '',
     email: '',
-    department: 'Computer Engineering',
+    department: '',
     phone: '',
     password: '',
   });
@@ -58,18 +58,18 @@ export const RegisterPage: React.FC = () => {
       errors.name = 'Name must not exceed 100 characters';
     }
 
-    if (!formData.studentId.trim()) {
+    const studentIdTrimmed = formData.studentId.trim();
+    if (!studentIdTrimmed) {
       errors.studentId = 'Student ID is required';
-    } else if (formData.studentId.trim().length > 50) {
-      errors.studentId = 'Student ID must not exceed 50 characters';
+    } else if (!/^EG\/[0-9]{4}\/[0-9]{4}$/i.test(studentIdTrimmed)) {
+      errors.studentId = 'Student ID must be in the format EG/XXXX/XXXX';
     }
 
-    if (!formData.email.trim()) {
+    const emailTrimmed = formData.email.trim();
+    if (!emailTrimmed) {
       errors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      errors.email = 'Invalid email format';
-    } else if (formData.email.trim().length > 150) {
-      errors.email = 'Email must not exceed 150 characters';
+    } else if (!/^eg[0-9]{6}@engug\.ruh\.ac\.lk$/i.test(emailTrimmed)) {
+      errors.email = 'Email must be a valid faculty email (e.g. egXXXXXX@engug.ruh.ac.lk)';
     }
 
     if (!formData.password) {
@@ -78,12 +78,18 @@ export const RegisterPage: React.FC = () => {
       errors.password = 'Password must be at least 6 characters long';
     }
 
-    if (formData.phone && formData.phone.trim().length > 20) {
+    const phoneTrimmed = formData.phone.trim();
+    if (!phoneTrimmed) {
+      errors.phone = 'Contact phone number is required';
+    } else if (phoneTrimmed.length > 20) {
       errors.phone = 'Phone must not exceed 20 characters';
     }
 
-    if (formData.department && formData.department.trim().length > 100) {
-      errors.department = 'Department must not exceed 100 characters';
+    const deptTrimmed = formData.department.trim();
+    if (!deptTrimmed) {
+      errors.department = 'Engineering department is required';
+    } else if (!SUPPORTED_DEPARTMENTS.includes(deptTrimmed as SupportedDepartment)) {
+      errors.department = 'Please select a valid engineering department';
     }
 
     setFieldErrors(errors);
@@ -103,11 +109,11 @@ export const RegisterPage: React.FC = () => {
     try {
       const user = await register({
         name: formData.name.trim(),
-        studentId: formData.studentId.trim(),
+        studentId: formData.studentId.trim().toUpperCase(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        phone: formData.phone.trim() || undefined,
-        department: formData.department.trim() || undefined,
+        phone: formData.phone.trim(),
+        department: formData.department.trim(),
       });
 
       setRegisteredUser(user);
@@ -274,7 +280,7 @@ export const RegisterPage: React.FC = () => {
                 name="name"
                 type="text"
                 className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
-                placeholder="e.g. Kasun Perera"
+                placeholder="Kasun Perera"
                 value={formData.name}
                 onChange={handleChange}
                 required
@@ -312,7 +318,7 @@ export const RegisterPage: React.FC = () => {
                   name="studentId"
                   type="text"
                   className={`form-input ${fieldErrors.studentId ? 'input-error' : ''}`}
-                  placeholder="e.g. E/19/042"
+                  placeholder="EG/XXXX/XXXX"
                   value={formData.studentId}
                   onChange={handleChange}
                   required
@@ -341,7 +347,7 @@ export const RegisterPage: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" htmlFor="register-phone">
-                Contact Phone (Optional)
+                Contact Phone <span style={{ color: 'var(--color-danger)' }}>*</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -349,9 +355,10 @@ export const RegisterPage: React.FC = () => {
                   name="phone"
                   type="tel"
                   className={`form-input ${fieldErrors.phone ? 'input-error' : ''}`}
-                  placeholder="e.g. +94771234567"
+                  placeholder="+94712345678"
                   value={formData.phone}
                   onChange={handleChange}
+                  required
                   maxLength={20}
                   style={{ paddingLeft: '2.5rem' }}
                   aria-invalid={!!fieldErrors.phone}
@@ -378,24 +385,26 @@ export const RegisterPage: React.FC = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="register-department">
-              Engineering Department (Optional)
+              Engineering Department <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
               <select
                 id="register-department"
                 name="department"
-                className="form-select"
+                className={`form-select ${fieldErrors.department ? 'input-error' : ''}`}
                 value={formData.department}
                 onChange={handleChange}
+                required
                 style={{ paddingLeft: '2.5rem' }}
+                aria-invalid={!!fieldErrors.department}
+                aria-describedby={fieldErrors.department ? 'register-department-error' : undefined}
               >
-                <option value="">Select department (Optional)</option>
-                <option value="Computer Engineering">Computer Engineering</option>
-                <option value="Electrical & Electronic Engineering">Electrical & Electronic Engineering</option>
-                <option value="Mechanical Engineering">Mechanical Engineering</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Chemical & Process Engineering">Chemical & Process Engineering</option>
-                <option value="Manufacturing & Industrial Engineering">Manufacturing & Industrial Engineering</option>
+                <option value="">Select your engineering department</option>
+                {SUPPORTED_DEPARTMENTS.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
               </select>
               <Building2
                 size={16}
@@ -409,6 +418,11 @@ export const RegisterPage: React.FC = () => {
                 }}
               />
             </div>
+            {fieldErrors.department && (
+              <span id="register-department-error" className="form-hint" style={{ color: 'var(--color-danger)' }}>
+                {fieldErrors.department}
+              </span>
+            )}
           </div>
 
           <div className="form-group">
@@ -421,7 +435,7 @@ export const RegisterPage: React.FC = () => {
                 name="email"
                 type="email"
                 className={`form-input ${fieldErrors.email ? 'input-error' : ''}`}
-                placeholder="e.g. e19042@eng.pdn.ac.lk"
+                placeholder="egXXXXXX@engug.ruh.ac.lk"
                 value={formData.email}
                 onChange={handleChange}
                 required
@@ -446,7 +460,7 @@ export const RegisterPage: React.FC = () => {
                 {fieldErrors.email}
               </span>
             ) : (
-              <span className="form-hint">Institutional or student email address</span>
+              <span className="form-hint">Use your Faculty of Engineering university email.</span>
             )}
           </div>
 

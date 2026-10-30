@@ -13,6 +13,17 @@ import {
   ApiErrorResponse,
   RegisterRequest,
   LoginRequest,
+  UpdateProfileRequest,
+  AdminOverviewResponse,
+  AdminUserResponse,
+  UpdateUserRoleRequest,
+  ModerateListingRequest,
+  AdminListingResponse,
+  AdminAuditLogResponse,
+  Role,
+  ComponentStatus,
+  ModerationStatus,
+  ReservationStatus,
 } from './types';
 
 export const API_BASE_URL = (
@@ -152,6 +163,11 @@ export const api = {
 
   users: {
     getMe: () => request<UserResponse>('/api/users/me'),
+    updateProfile: (data: UpdateProfileRequest) =>
+      request<UserResponse>('/api/users/me', {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
   },
 
   components: {
@@ -203,5 +219,73 @@ export const api = {
     cancel: (id: number) => request<ReservationResponse>(`/api/reservations/${id}/cancel`, { method: 'PATCH' }),
 
     complete: (id: number) => request<ReservationResponse>(`/api/reservations/${id}/complete`, { method: 'PATCH' }),
+  },
+
+  admin: {
+    getOverview: () => request<AdminOverviewResponse>('/api/admin/overview'),
+
+    getUsers: (params?: { search?: string; role?: Role; page?: number; size?: number }) => {
+      const query = new URLSearchParams();
+      if (params) {
+        if (params.search) query.set('search', params.search);
+        if (params.role) query.set('role', params.role);
+        if (params.page !== undefined) query.set('page', String(params.page));
+        if (params.size !== undefined) query.set('size', String(params.size));
+      }
+      const qs = query.toString();
+      return request<PagedResponse<AdminUserResponse>>(`/api/admin/users${qs ? `?${qs}` : ''}`);
+    },
+
+    updateUserRole: (id: number, data: UpdateUserRoleRequest) =>
+      request<AdminUserResponse>(`/api/admin/users/${id}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+
+    getListings: (params?: {
+      search?: string;
+      status?: ComponentStatus;
+      moderationStatus?: ModerationStatus;
+      page?: number;
+      size?: number;
+    }) => {
+      const query = new URLSearchParams();
+      if (params) {
+        if (params.search) query.set('search', params.search);
+        if (params.status) query.set('status', params.status);
+        if (params.moderationStatus) query.set('moderationStatus', params.moderationStatus);
+        if (params.page !== undefined) query.set('page', String(params.page));
+        if (params.size !== undefined) query.set('size', String(params.size));
+      }
+      const qs = query.toString();
+      return request<PagedResponse<AdminListingResponse>>(`/api/admin/listings${qs ? `?${qs}` : ''}`);
+    },
+
+    moderateListing: (id: number, data: ModerateListingRequest) =>
+      request<AdminListingResponse>(`/api/admin/listings/${id}/moderate`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      }),
+
+    getReservations: (params?: { status?: ReservationStatus; page?: number; size?: number }) => {
+      const query = new URLSearchParams();
+      if (params) {
+        if (params.status) query.set('status', params.status);
+        if (params.page !== undefined) query.set('page', String(params.page));
+        if (params.size !== undefined) query.set('size', String(params.size));
+      }
+      const qs = query.toString();
+      return request<PagedResponse<ReservationResponse>>(`/api/admin/reservations${qs ? `?${qs}` : ''}`);
+    },
+
+    getAuditLogs: (params?: { page?: number; size?: number }) => {
+      const query = new URLSearchParams();
+      if (params) {
+        if (params.page !== undefined) query.set('page', String(params.page));
+        if (params.size !== undefined) query.set('size', String(params.size));
+      }
+      const qs = query.toString();
+      return request<PagedResponse<AdminAuditLogResponse>>(`/api/admin/audit-logs${qs ? `?${qs}` : ''}`);
+    },
   },
 };

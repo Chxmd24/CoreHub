@@ -175,7 +175,7 @@ export const LoginPage: React.FC = () => {
                 id="login-email"
                 type="email"
                 className="form-input"
-                placeholder="e.g. e20001@eng.pdn.ac.lk"
+                placeholder="egXXXXXX@engug.ruh.ac.lk"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);

@@ -53,6 +53,8 @@ const AuthConsumer: React.FC = () => {
             studentId: 'E/20/001',
             email: 'e20001@eng.pdn.ac.lk',
             password: 'password123',
+            phone: '+94771234567',
+            department: 'Computer Engineering',
           }).catch((err) => {
             console.error('Register error', err);
           })
@@ -212,6 +214,8 @@ describe('AuthContext and AuthProvider', () => {
       studentId: 'E/20/001',
       email: 'e20001@eng.pdn.ac.lk',
       password: 'password123',
+      phone: '+94771234567',
+      department: 'Computer Engineering',
     });
 
     // Registration returns user profile, not token: user remains unauthenticated until login

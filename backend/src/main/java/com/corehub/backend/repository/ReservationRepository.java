@@ -2,6 +2,8 @@ package com.corehub.backend.repository;
 
 import com.corehub.backend.entity.Reservation;
 import com.corehub.backend.entity.ReservationStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -29,4 +31,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Optional<Reservation> findByComponentIdAndStatus(Long componentId, ReservationStatus status);
 
     boolean existsByComponentIdAndStatus(Long componentId, ReservationStatus status);
+
+    long countByStatus(ReservationStatus status);
+
+    long countByReservedById(Long userId);
+
+    Page<Reservation> findAllByOrderByReservedAtDesc(Pageable pageable);
+
+    Page<Reservation> findByStatusOrderByReservedAtDesc(ReservationStatus status, Pageable pageable);
 }

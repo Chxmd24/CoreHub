@@ -58,6 +58,19 @@ public class Component {
     @Column(name = "status", nullable = false, length = 20)
     private ComponentStatus status = ComponentStatus.AVAILABLE;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "moderation_status", nullable = false, length = 20)
+    private ModerationStatus moderationStatus = ModerationStatus.ACTIVE;
+
+    @Column(name = "moderation_reason", columnDefinition = "TEXT")
+    private String moderationReason;
+
+    @Column(name = "moderated_at")
+    private LocalDateTime moderatedAt;
+
+    @Column(name = "moderated_by")
+    private String moderatedBy;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
@@ -93,6 +106,9 @@ public class Component {
         }
         if (this.status == null) {
             this.status = ComponentStatus.AVAILABLE;
+        }
+        if (this.moderationStatus == null) {
+            this.moderationStatus = ModerationStatus.ACTIVE;
         }
     }
 
@@ -163,6 +179,38 @@ public class Component {
 
     public void setStatus(ComponentStatus status) {
         this.status = status;
+    }
+
+    public ModerationStatus getModerationStatus() {
+        return moderationStatus;
+    }
+
+    public void setModerationStatus(ModerationStatus moderationStatus) {
+        this.moderationStatus = moderationStatus;
+    }
+
+    public String getModerationReason() {
+        return moderationReason;
+    }
+
+    public void setModerationReason(String moderationReason) {
+        this.moderationReason = moderationReason;
+    }
+
+    public LocalDateTime getModeratedAt() {
+        return moderatedAt;
+    }
+
+    public void setModeratedAt(LocalDateTime moderatedAt) {
+        this.moderatedAt = moderatedAt;
+    }
+
+    public String getModeratedBy() {
+        return moderatedBy;
+    }
+
+    public void setModeratedBy(String moderatedBy) {
+        this.moderatedBy = moderatedBy;
     }
 
     public User getOwner() {
