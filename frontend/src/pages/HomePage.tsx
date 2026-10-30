@@ -112,9 +112,9 @@ export const HomePage: React.FC = () => {
             </span>
             <span style={{ color: 'var(--color-text-muted)' }}>
               {backendStatus === 'ONLINE'
-                ? 'Connected and Operational (Port 8080)'
+                ? 'Connected and Operational'
                 : backendStatus === 'OFFLINE'
-                ? 'Backend not detected at localhost:8080 (Start backend via mvn spring-boot:run)'
+                ? 'Backend unreachable (Start backend or verify API connection)'
                 : 'Probing API health status...'}
             </span>
           </div>
