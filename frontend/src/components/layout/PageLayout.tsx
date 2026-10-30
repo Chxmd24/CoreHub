@@ -12,7 +12,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   container = true,
 }) => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', minWidth: 0 }}>
       <Navbar />
       <main
         id="main-content"
@@ -20,6 +20,8 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
           flex: '1 0 auto',
           paddingTop: '2rem',
           paddingBottom: '3rem',
+          width: '100%',
+          minWidth: 0,
         }}
       >
         {container ? <div className="container">{children}</div> : children}

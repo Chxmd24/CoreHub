@@ -176,7 +176,7 @@ export const api = {
       return request<PagedResponse<ComponentResponse>>(`/api/components${qs ? `?${qs}` : ''}`);
     },
 
-    getById: (id: number) => request<ComponentResponse>(`/api/components/${id}`),
+    getById: (id: number | string) => request<ComponentResponse>(`/api/components/${id}`),
 
     getMy: () => request<ComponentResponse[]>('/api/components/mine'),
 
@@ -190,7 +190,7 @@ export const api = {
     }) => request<ComponentResponse>('/api/components', { method: 'POST', body: JSON.stringify(data) }),
 
     update: (
-      id: number,
+      id: number | string,
       data: {
         title: string;
         description: string;
@@ -201,7 +201,7 @@ export const api = {
       }
     ) => request<ComponentResponse>(`/api/components/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
-    delete: (id: number) => request<void>(`/api/components/${id}`, { method: 'DELETE' }),
+    delete: (id: number | string) => request<void>(`/api/components/${id}`, { method: 'DELETE' }),
   },
 
   reservations: {

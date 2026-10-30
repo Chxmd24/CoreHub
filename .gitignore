@@ -38,3 +38,6 @@ ehthumbs.db
 
 # Log files
 *.log
+
+# Scripts local test tracking state
+scripts/*.json

@@ -94,6 +94,13 @@ describe('CoreHub Application Routing and Route Protection', () => {
     });
   });
 
+  it('renders Component Details page at "/components/:id" publicly without requiring authentication', async () => {
+    renderAppWithRoute('/components/1');
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: /back to marketplace/i })).toBeInTheDocument();
+    });
+  });
+
   it('renders Login page at "/login" publicly', () => {
     renderAppWithRoute('/login');
     expect(screen.getByRole('heading', { name: /student sign in/i })).toBeInTheDocument();
